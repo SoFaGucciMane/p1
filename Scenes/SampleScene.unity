@@ -571,6 +571,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60256be5b80393242a6318f4216d5119, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  boardLayout:
+    rows:
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
+    - row: 
   _boardRect: {fileID: 1725852274}
   _cellPrefab: {fileID: 4281443557580127043, guid: 80e8a076dd7b4e1419e5b4683489d9f8, type: 3}
   _cellSprites:

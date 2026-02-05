@@ -1,69 +1,179 @@
-
-
+using System.Collections.Generic;
 using StaticData;
-using UnityEditor.U2D.Aseprite;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-
-public class BoardService : MonoBehaviour // В BoardService мы будет регистрировать наши элементы по сетке.
+public class BoardService : MonoBehaviour
 {
     [SerializeField] RectTransform _boardRect;
     [SerializeField] Cell _cellPrefab;
-    [SerializeField] private Sprite[] _cellSprites; // Массив спрайтов для ячеек
+    [SerializeField] private Sprite[] _cellSprites;
 
-    private MatchMachine _matchMachine; // Сылка
+    private Cell[,] _board;
 
-    private void Awake()
-    {
-        _matchMachine = new MatchMachine(this);// Инициализируем из BoardServise 
-    }
     private void Start()
     {
-        VerifyBoardOnMatches();
-
-        for (int x = 0; x < Config.BoardWith; x++)  // Заполнение самих ячеек.
-        {
-            for (int y = 0; y < Config.BoardHeight; y++)
-            {
-                var cell = InstantiateCell();
-                var point = new Points(x, y);
-                cell.rect.anchoredPosition = GetBoardPositionsFromPoint(point);
-                var cellType = GetRandomCellType();
-                cell.Initialize(new CellData(cellType, point), _cellSprites[(int)(cellType - 1)]);
-            }
-        }
+        InitializeBoard();
     }
 
-    private void VerifyBoardOnMatches()
+    private void InitializeBoard()
     {
-        for (int x = 0; x < Config.BoardWith; x++)  // Заполнение самих ячеек.
+        _board = new Cell[Config.BoardWith, Config.BoardHeight];
+
+        for (int x = 0; x < Config.BoardWith; x++)
         {
             for (int y = 0; y < Config.BoardHeight; y++)
             {
-                //var point = new Points(x, y);
-                //var cellTypeAtPoint = GetCellTypeAtPoint(point);// Будет возврощать тип ячейки в заданной точке 
+                CreateCellAt(x, y);
             }
+        }
+
+        while (HasMatches())
+        {
+            RemoveMatchesInstant();
+            RefillBoard();
         }
     }
 
-    //private object GetCellTypeAtPoint(Points point) 
-    //{
-    //    _b
-    //}
+    private void CreateCellAt(int x, int y)
+    {
+        var cell = Instantiate(_cellPrefab, _boardRect);
+        var point = new Points(x, y);
+        cell.rect.anchoredPosition = GetBoardPositionFromPoint(point);
+        var cellType = GetRandomCellType();
+        cell.Initialize(new CellData(cellType, point), _cellSprites[(int)(cellType - 1)]);
+
+        _board[x, y] = cell;
+    }
+
+    private Vector2 GetBoardPositionFromPoint(Points point)
+    {
+        return new Vector2(
+            Config.PinceSize / 2 + Config.PinceSize * point.x,
+            -Config.PinceSize / 2 - Config.PinceSize * point.y
+        );
+    }
 
     private CellData.CellType GetRandomCellType()
-      =>(CellData.CellType)( Random.Range(0, _cellSprites.Length) + 1);
-    
+        => (CellData.CellType)(Random.Range(0, _cellSprites.Length) + 1);
 
-    private Cell InstantiateCell() => Instantiate(_cellPrefab,_boardRect);
-    private Vector2 GetBoardPositionsFromPoint(Points point)
+    public Cell GetCellAt(int x, int y)
     {
+        if (x < 0 || x >= Config.BoardWith || y < 0 || y >= Config.BoardHeight)
+            return null;
+        return _board[x, y];
+    }
 
-        return new Vector2(
-            Config.PinceSize / 2 + Config.PinceSize * point.x
-            ,
-            -Config.PinceSize / 2 - Config.PinceSize * point.y
-            );
+    public Cell GetCellAt(Points point) => GetCellAt(point.x, point.y);
+
+    // ===== СИСТЕМА МАТЧЕЙ =====
+
+    public List<Cell> FindAllMatches()
+    {
+        List<Cell> matchedCells = new List<Cell>();
+
+        for (int y = 0; y < Config.BoardHeight; y++)
+        {
+            for (int x = 0; x < Config.BoardWith - 2; x++)
+            {
+                var match = GetMatchHorizontal(x, y);
+                if (match.Count >= 3)
+                {
+                    foreach (var cell in match)
+                    {
+                        if (!matchedCells.Contains(cell))
+                            matchedCells.Add(cell);
+                    }
+                }
+            }
+        }
+
+        for (int x = 0; x < Config.BoardWith; x++)
+        {
+            for (int y = 0; y < Config.BoardHeight - 2; y++)
+            {
+                var match = GetMatchVertical(x, y);
+                if (match.Count >= 3)
+                {
+                    foreach (var cell in match)
+                    {
+                        if (!matchedCells.Contains(cell))
+                            matchedCells.Add(cell);
+                    }
+                }
+            }
+        }
+
+        return matchedCells;
+    }
+
+    private List<Cell> GetMatchHorizontal(int startX, int y)
+    {
+        List<Cell> match = new List<Cell>();
+        Cell startCell = GetCellAt(startX, y);
+
+        if (startCell == null) return match;
+
+        var targetType = startCell.CellType;
+
+        for (int x = startX; x < Config.BoardWith; x++)
+        {
+            Cell cell = GetCellAt(x, y);
+            if (cell != null && cell.CellType == targetType)
+                match.Add(cell);
+            else
+                break;
+        }
+
+        return match;
+    }
+
+    private List<Cell> GetMatchVertical(int x, int startY)
+    {
+        List<Cell> match = new List<Cell>();
+        Cell startCell = GetCellAt(x, startY);
+
+        if (startCell == null) return match;
+
+        var targetType = startCell.CellType;
+
+        for (int y = startY; y < Config.BoardHeight; y++)
+        {
+            Cell cell = GetCellAt(x, y);
+            if (cell != null && cell.CellType == targetType)
+                match.Add(cell);
+            else
+                break;
+        }
+
+        return match;
+    }
+
+    public bool HasMatches() => FindAllMatches().Count > 0;
+
+    private void RemoveMatchesInstant()
+    {
+        var matches = FindAllMatches();
+        foreach (var cell in matches)
+        {
+            int x = cell.Points.x;
+            int y = cell.Points.y;
+            Destroy(cell.gameObject);
+            _board[x, y] = null;
+        }
+    }
+
+    private void RefillBoard()
+    {
+        for (int x = 0; x < Config.BoardWith; x++)
+        {
+            for (int y = 0; y < Config.BoardHeight; y++)
+            {
+                if (_board[x, y] == null)
+                {
+                    CreateCellAt(x, y);
+                }
+            }
+        }
     }
 }
