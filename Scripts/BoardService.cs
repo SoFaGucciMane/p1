@@ -11,9 +11,21 @@ public class BoardService : MonoBehaviour
 
     private Cell[,] _board;
 
+    private CellMover _cellMover;
+
+    private void Awake()
+    {
+        _cellMover = new CellMover();
+    }
+
     private void Start()
     {
         InitializeBoard();
+        
+    }
+    private void Update()
+    {
+        _cellMover.Update();// Запускаем update в скрипте, потому что у него есть 
     }
 
     private void InitializeBoard()
@@ -24,7 +36,7 @@ public class BoardService : MonoBehaviour
         {
             for (int y = 0; y < Config.BoardHeight; y++)
             {
-                CreateCellAt(x, y);
+                CreateCellAt(x, y, _cellMover);
             }
         }
 
@@ -35,18 +47,18 @@ public class BoardService : MonoBehaviour
         }
     }
 
-    private void CreateCellAt(int x, int y)
+    private void CreateCellAt(int x, int y, CellMover cellMover)
     {
         var cell = Instantiate(_cellPrefab, _boardRect);
         var point = new Points(x, y);
         cell.rect.anchoredPosition = GetBoardPositionFromPoint(point);
         var cellType = GetRandomCellType();
-        cell.Initialize(new CellData(cellType, point), _cellSprites[(int)(cellType - 1)]);
+        cell.Initialize(new CellData(cellType, point), _cellSprites[(int)(cellType - 1)], cellMover);
 
         _board[x, y] = cell;
     }
 
-    private Vector2 GetBoardPositionFromPoint(Points point)
+    public static Vector2 GetBoardPositionFromPoint(Points point)
     {
         return new Vector2(
             Config.PinceSize / 2 + Config.PinceSize * point.x,
@@ -156,8 +168,8 @@ public class BoardService : MonoBehaviour
         var matches = FindAllMatches();
         foreach (var cell in matches)
         {
-            int x = cell.Points.x;
-            int y = cell.Points.y;
+            int x = cell.Point.x;
+            int y = cell.Point.y;
             Destroy(cell.gameObject);
             _board[x, y] = null;
         }
@@ -171,9 +183,10 @@ public class BoardService : MonoBehaviour
             {
                 if (_board[x, y] == null)
                 {
-                    CreateCellAt(x, y);
+                    CreateCellAt(x, y, _cellMover);
                 }
             }
         }
     }
+
 }
