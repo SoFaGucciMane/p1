@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -14,8 +15,23 @@ public class Cell : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     public CellData.CellType CellType => _cellData.cellType;
 
     CellMover _cellMover; // —ылка на скрипт, который будет отвечать за событи€ движени€ €чейки
+    private Vector2 _position;
+    private bool _isUpdating;// дл€ проверки апйдета у cell
 
-
+    public bool UpdateCell() 
+    {
+        if (Vector3.Distance(rect.anchoredPosition, _position) > 1)
+        {
+            MovePosition(_position);
+            _isUpdating = true;
+        }
+        else 
+        {
+            rect.anchoredPosition = _position;
+            _isUpdating = false;
+        }
+        return _isUpdating;
+    }
 
     public void Initialize(CellData cellData, Sprite sprite, CellMover cellMover)
     {
@@ -23,6 +39,7 @@ public class Cell : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         _image.sprite = sprite;
         UpdateName();
         _cellMover = cellMover;
+        ResetPosition();
     }
 
     public void OnPointerDown(PointerEventData eventData ) // ѕри нажатии запуститьс€
@@ -36,11 +53,11 @@ public class Cell : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     }
 
     private void UpdateName()
-    {
-        transform.name = $"Cell[{Point.x}, {Point.y}]";
-    }
-    public void MovePosition(Vector2 position) 
-    {
-        rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, position, Time.deltaTime + _moveSpeed); // ѕлавное передвиженик к новой €чейки, от стартовой     позиции к новой позиции
-    }
+        => transform.name = $"Cell[{Point.x}, {Point.y}]";
+    public void MovePosition(Vector2 position)     
+        => rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, position, Time.deltaTime + _moveSpeed); // ѕлавное передвиженик к новой €чейки, от стартовой     позиции к новой позиции
+ 
+
+    public void ResetPosition() // ћетод, который будет возврощать спрайт обратно,если это не матч
+        => _position = BoardService.GetBoardPositionFromPoint(Point);
 }

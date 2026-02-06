@@ -10,6 +10,12 @@ public class CellMover
     private Points _newPoint;
     private Cell _movingCell; // Ячейка которую мы передвигаем
     private Vector2 _startMousePosition;
+    BoardService _boardService;
+
+    public CellMover(BoardService boardService) 
+    {
+        _boardService = boardService;
+    }
 
     public void Update()
     {
@@ -56,6 +62,7 @@ public class CellMover
     {
         if (_movingCell == null) // Проверка
             return ;
+        _boardService.ResetCell(_movingCell);
         _movingCell = null;
     }
 }

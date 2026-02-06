@@ -13,9 +13,11 @@ public class BoardService : MonoBehaviour
 
     private CellMover _cellMover;
 
+    private readonly List<Cell> _updatingCells = new List<Cell>(); // —писок €чеек, которых мы должны обновл€ть
+
     private void Awake()
     {
-        _cellMover = new CellMover();
+        _cellMover = new CellMover(this);
     }
 
     private void Start()
@@ -26,8 +28,24 @@ public class BoardService : MonoBehaviour
     private void Update()
     {
         _cellMover.Update();// «апускаем update в скрипте, потому что у него есть 
+
+        var finishedUpdating = new List<Cell>();
+        foreach (var cell in _updatingCells) // ѕеребиаем из существующих €чеек обновленные €чейки
+        {
+            if(!cell.UpdateCell())
+            finishedUpdating.Add(cell);
+        }
+        foreach (var cell in finishedUpdating) 
+        {
+            _updatingCells.Remove(cell);
+        }
     }
 
+    public void ResetCell(Cell cell) // –ессетит позицию €чейки
+    {
+        cell.ResetPosition(); // ћетод, который обновл€ет позициию
+        _updatingCells.Add(cell); // ƒобавление в список €чеек, которых нужно обновить
+    }
     private void InitializeBoard()
     {
         _board = new Cell[Config.BoardWith, Config.BoardHeight];
