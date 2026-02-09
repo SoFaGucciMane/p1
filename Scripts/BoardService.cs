@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Drawing;
 using StaticData;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -14,6 +15,8 @@ public class BoardService : MonoBehaviour
     private CellMover _cellMover;
 
     private readonly List<Cell> _updatingCells = new List<Cell>(); // —писок €чеек, которых мы должны обновл€ть
+    private readonly List<CellFlip> _flippedCells = new List<CellFlip>(); // —писок €чеек, которых мы должны обновл€ть
+
 
     private void Awake()
     {
@@ -25,20 +28,39 @@ public class BoardService : MonoBehaviour
         InitializeBoard();
         
     }
-    private void Update()
-    {
-        _cellMover.Update();// «апускаем update в скрипте, потому что у него есть 
+        private void Update()
+        {
+            _cellMover.Update();// «апускаем update в скрипте, потому что у него есть 
 
-        var finishedUpdating = new List<Cell>();
-        foreach (var cell in _updatingCells) // ѕеребиаем из существующих €чеек обновленные €чейки
-        {
-            if(!cell.UpdateCell())
-            finishedUpdating.Add(cell);
+            var finishedUpdating = new List<Cell>();
+            foreach (var cell in _updatingCells) // ѕеребиаем из существующих €чеек обновленные €чейки
+            {
+                if(!cell.UpdateCell())
+                finishedUpdating.Add(cell);
+            }
+            foreach (var cell in finishedUpdating) 
+            {
+                var flip = GetFlip(cell); // ѕолучаем флип от той €чейки, по который мы проходимс€ / —¬я«№ ƒ¬”’ я„≈≈ 
+                _flippedCells.Remove(flip); // ”дал€ем их из активынх €чееек
+                _updatingCells.Remove(cell);
+            }
         }
-        foreach (var cell in finishedUpdating) 
+
+    private CellFlip GetFlip(Cell cell) // »щет где участвует данна€ пара €чеек. Ќаходит всю пару целиком.
+    {
+        foreach (var flip in _flippedCells) 
         {
-            _updatingCells.Remove(cell);
+            if(flip.GetOtherCell(cell) != null)
+                return flip;
+            return null;
         }
+    }
+
+    public void FlipCells(Points firstPoint, Points secondPoint, bool main) // ћетод, который будет запускать процесс смену €чеек
+    {
+        if (GetCellAt(firstPoint) >= 0)
+            return;
+        return;
     }
 
     public void ResetCell(Cell cell) // –ессетит позицию €чейки
@@ -206,5 +228,6 @@ public class BoardService : MonoBehaviour
             }
         }
     }
+
 
 }

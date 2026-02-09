@@ -23,15 +23,15 @@ public class CellMover
             return;
 
         var mousePosition = (Vector2)Input.mousePosition - _startMousePosition;
-        var absouteDirection = new Vector2(Mathf.Abs(mousePosition.x), Mathf.Abs(mousePosition.y));
+        var absouteDirection = new Vector2(Mathf.Abs(mousePosition.x), Mathf.Abs(mousePosition.y)); // Для проверки, куда больше двигается наша мышь, влево или вправо
 
-        _newPoint = Points.Clone(_movingCell.Point);
-        var addPoint = Points.zero;
+        _newPoint = Points.Clone(_movingCell.Point); // Кланируем позицию мувинг села, тот целл который мы двмгаем
+        var addPoint = Points.zero; // На сколько должен сдвинуаться поинт.
 
         if (mousePosition.magnitude > Config.PinceSize / 4)
         {
-            if (absouteDirection.x > absouteDirection.y)
-                addPoint = new Points(mousePosition.x > 0 ? 1 : -1, 0);
+            if (absouteDirection.x > absouteDirection.y) // Проекра, движимся мы по горизонтали или вертикали
+                addPoint = new Points(mousePosition.x > 0 ? 1 : -1, 0); // Проверяем на сколько мы двигаем поинт либо на одну позицию справа либо на одну позицию слева
             else
                 addPoint = new Points(0, mousePosition.y > 0 ? 1 : -1);
         }
