@@ -7,25 +7,25 @@ public class Cell : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
     public RectTransform rect;
     [SerializeField] private Image _image;
-    [SerializeField]private float _moveSpeed = 10;
+    [SerializeField] private float _moveSpeed = 10;
 
     private CellData _cellData;
 
     public Points Point => _cellData.point;
     public CellData.CellType CellType => _cellData.cellType;
 
-    CellMover _cellMover; // Сылка на скрипт, который будет отвечать за события движения ячейки
+    CellMover _cellMover;
     private Vector2 _position;
-    private bool _isUpdating;// для проверки апйдета у cell
+    private bool _isUpdating;
 
-    public bool UpdateCell() 
+    public bool UpdateCell()
     {
         if (Vector3.Distance(rect.anchoredPosition, _position) > 1)
         {
             MovePosition(_position);
             _isUpdating = true;
         }
-        else 
+        else
         {
             rect.anchoredPosition = _position;
             _isUpdating = false;
@@ -42,22 +42,28 @@ public class Cell : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         ResetPosition();
     }
 
-    public void OnPointerDown(PointerEventData eventData ) // При нажатии запуститься
+    public void SetPoint(Points point) // Обновляет позицию ячейки в данных (при свапе)
+    {
+        _cellData.point = point;
+        UpdateName();
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
     {
         _cellMover.MoveCell(this);
     }
 
-    public void OnPointerUp(PointerEventData eventData) // Когда отпуститят запустиься
+    public void OnPointerUp(PointerEventData eventData)
     {
         _cellMover.MoveDorp();
     }
 
     private void UpdateName()
         => transform.name = $"Cell[{Point.x}, {Point.y}]";
-    public void MovePosition(Vector2 position)     
-        => rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, position, Time.deltaTime + _moveSpeed); // Плавное передвиженик к новой ячейки, от стартовой     позиции к новой позиции
- 
 
-    public void ResetPosition() // Метод, который будет возврощать спрайт обратно,если это не матч
+    public void MovePosition(Vector2 position)
+        => rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, position, Time.deltaTime * _moveSpeed); // Исправлено: * вместо +
+
+    public void ResetPosition()
         => _position = BoardService.GetBoardPositionFromPoint(Point);
 }

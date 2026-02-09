@@ -10,6 +10,7 @@ public class BoardService : MonoBehaviour
     [SerializeField] RectTransform _boardRect;
     [SerializeField] Cell _cellPrefab;
     [SerializeField] private Sprite[] _cellSprites;
+    [SerializeField] private LevelManager _levelManager;
 
     private Cell[,] _board;
 
@@ -76,6 +77,9 @@ public class BoardService : MonoBehaviour
         if (_isProcessing)
             return;
 
+        if (_levelManager != null && _levelManager.IsLevelOver)
+            return;
+
         if (GetCellTypeAtPoint(firstPoint) < 0)
             return;
         if (GetCellTypeAtPoint(secondPoint) < 0)
@@ -95,7 +99,11 @@ public class BoardService : MonoBehaviour
             return;
         }
 
-        // Матч есть — запускаем анимацию движения
+        // Матч есть — тратим ход
+        if (_levelManager != null)
+            _levelManager.UseMove();
+
+        // Запускаем анимацию движения
         var firstCell = GetCellAt(firstPoint);
         var secondCell = GetCellAt(secondPoint);
 
@@ -136,6 +144,10 @@ public class BoardService : MonoBehaviour
     private IEnumerator DestroyMatchedCellsSmooth(List<Cell> matches)
     {
         yield return new WaitForSeconds(0.2f);
+
+        // Сообщаем LevelManager о удалённых ячейках
+        if (_levelManager != null)
+            _levelManager.AddMatchedCells(matches.Count);
 
         // Запускаем анимацию уменьшения для всех ячеек одновременно
         var coroutines = new List<Coroutine>();
