@@ -32,14 +32,26 @@ public class CellMover
             if (absouteDirection.x > absouteDirection.y)
                 addPoint = new Points(mousePosition.x > 0 ? 1 : -1, 0);
             else
-                addPoint = new Points(0, mousePosition.y > 0 ? 1 : -1);
+                addPoint = new Points(0, mousePosition.y > 0 ? -1 : 1);
         }
 
         _newPoint.Add(addPoint);
 
+        // Проверяем, что целевая позиция внутри доски и не пустая
+        var targetCell = _boardService.GetCellAt(_newPoint);
+        bool validTarget = targetCell != null && !_newPoint.Equals(_movingCell.Point);
+
         var position = BoardService.GetBoardPositionFromPoint(_movingCell.Point);
-        if (!_newPoint.Equals(_movingCell.Point))
-            position += Points.Multiply(addPoint, Config.PinceSize / 2).ToVector();
+        if (validTarget)
+        {
+            var visualOffset = new Vector2(addPoint.x, -addPoint.y) * (Config.PinceSize / 2);
+            position += visualOffset;
+        }
+        else
+        {
+            // Невалидная цель — сбрасываем newPoint обратно
+            _newPoint = Points.Clone(_movingCell.Point);
+        }
 
         _movingCell.MovePosition(position);
     }
@@ -57,14 +69,12 @@ public class CellMover
         if (_movingCell == null)
             return;
 
-        // Если игрок сдвинул ячейку на соседнюю позицию — запускаем обмен
         if (!_newPoint.Equals(_movingCell.Point))
         {
             _boardService.FlipCells(_movingCell.Point, _newPoint, true);
         }
         else
         {
-            // Не сдвинул — просто возвращаем на место
             _boardService.ResetCell(_movingCell);
         }
 

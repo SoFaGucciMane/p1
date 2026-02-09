@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using StaticData;
@@ -96,8 +97,8 @@ public class BoardService : MonoBehaviour
         ResetCell(firstCell);
         ResetCell(secondCell);
 
-        // ”дал€ем совпавшие €чейки сразу
-        DestroyMatchedCells(matches);
+        // ”дал€ем совпавшие €чейки с плавной задержкой
+        StartCoroutine(DestroyMatchedCellsSmooth(matches));
     }
 
     private void SwapCells(Points firstPoint, Points secondPoint)
@@ -112,16 +113,43 @@ public class BoardService : MonoBehaviour
         secondCell.SetPoint(firstPoint);
     }
 
-    private void DestroyMatchedCells(List<Cell> matches) // ”дал€ет совпавшие €чейки Ч без заполнени€ пустот
+    private IEnumerator DestroyMatchedCellsSmooth(List<Cell> matches) // ѕлавное удаление с небольшой задержкой между €чейками
     {
+        yield return new WaitForSeconds(0.2f); // ∆дЄм начало анимации свапа
+
         foreach (var cell in matches)
         {
             int x = cell.Point.x;
             int y = cell.Point.y;
             _updatingCells.Remove(cell);
             _board[x, y] = null;
-            Destroy(cell.gameObject);
+
+            // ѕлавное уменьшение перед удалением
+            if (cell != null && cell.gameObject != null)
+            {
+                StartCoroutine(ShrinkAndDestroy(cell));
+            }
         }
+    }
+
+    private IEnumerator ShrinkAndDestroy(Cell cell) // ”меньшает €чейку и удал€ет
+    {
+        var t = cell.transform;
+        var startScale = t.localScale;
+        float duration = 0.15f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (t == null) yield break;
+            elapsed += Time.deltaTime;
+            float progress = elapsed / duration;
+            t.localScale = Vector3.Lerp(startScale, Vector3.zero, progress);
+            yield return null;
+        }
+
+        if (cell != null && cell.gameObject != null)
+            Destroy(cell.gameObject);
     }
 
     public void ResetCell(Cell cell)
