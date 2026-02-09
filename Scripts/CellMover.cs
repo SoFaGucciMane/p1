@@ -49,7 +49,6 @@ public class CellMover
         }
         else
         {
-            // Невалидная цель — сбрасываем newPoint обратно
             _newPoint = Points.Clone(_movingCell.Point);
         }
 
@@ -59,6 +58,8 @@ public class CellMover
     public void MoveCell(Cell cell)
     {
         if (_movingCell != null)
+            return;
+        if (_boardService.IsProcessing) // Блокируем ввод во время каскада
             return;
         _movingCell = cell;
         _startMousePosition = Input.mousePosition;

@@ -1,4 +1,4 @@
-using System.Collections;
+п»їusing System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using StaticData;
@@ -15,8 +15,10 @@ public class BoardService : MonoBehaviour
 
     private CellMover _cellMover;
 
-    private readonly List<Cell> _updatingCells = new List<Cell>(); // Список ячеек, которых мы должны обновлять
-    private readonly List<CellFlip> _flippedCells = new List<CellFlip>(); // Список пар ячеек, которые сейчас в процессе обмена
+    private readonly List<Cell> _updatingCells = new List<Cell>();
+    private readonly List<CellFlip> _flippedCells = new List<CellFlip>();
+
+    private bool _isProcessing; // Р‘Р»РѕРєРёСЂРѕРІРєР° РІРІРѕРґР° РІРѕ РІСЂРµРјСЏ РєР°СЃРєР°РґР°
 
 
     private void Awake()
@@ -49,6 +51,8 @@ public class BoardService : MonoBehaviour
         }
     }
 
+    public bool IsProcessing => _isProcessing; // Р“РµС‚С‚РµСЂ РґР»СЏ CellMover
+
     private CellFlip GetFlip(Cell cell)
     {
         foreach (var flip in _flippedCells)
@@ -69,26 +73,29 @@ public class BoardService : MonoBehaviour
 
     public void FlipCells(Points firstPoint, Points secondPoint, bool main)
     {
+        if (_isProcessing)
+            return;
+
         if (GetCellTypeAtPoint(firstPoint) < 0)
             return;
         if (GetCellTypeAtPoint(secondPoint) < 0)
             return;
 
-        // Предварительный свап — проверяем, будет ли матч
+        // РџСЂРµРґРІР°СЂРёС‚РµР»СЊРЅС‹Р№ СЃРІР°Рї вЂ” РїСЂРѕРІРµСЂСЏРµРј, Р±СѓРґРµС‚ Р»Рё РјР°С‚С‡
         SwapCells(firstPoint, secondPoint);
 
         var matches = FindAllMatches();
 
         if (matches.Count == 0)
         {
-            // Матча нет — откатываем свап, ячейка просто вернётся на место
+            // РњР°С‚С‡Р° РЅРµС‚ вЂ” РѕС‚РєР°С‚С‹РІР°РµРј СЃРІР°Рї
             SwapCells(firstPoint, secondPoint);
             var cell = GetCellAt(firstPoint);
             ResetCell(cell);
             return;
         }
 
-        // Матч есть — запускаем анимацию движения
+        // РњР°С‚С‡ РµСЃС‚СЊ вЂ” Р·Р°РїСѓСЃРєР°РµРј Р°РЅРёРјР°С†РёСЋ РґРІРёР¶РµРЅРёСЏ
         var firstCell = GetCellAt(firstPoint);
         var secondCell = GetCellAt(secondPoint);
 
@@ -97,26 +104,41 @@ public class BoardService : MonoBehaviour
         ResetCell(firstCell);
         ResetCell(secondCell);
 
-        // Удаляем совпавшие ячейки с плавной задержкой
-        StartCoroutine(DestroyMatchedCellsSmooth(matches));
+        // Р—Р°РїСѓСЃРєР°РµРј РєР°СЃРєР°Рґ: СѓРґР°Р»РµРЅРёРµ в†’ РїР°РґРµРЅРёРµ в†’ РіРµРЅРµСЂР°С†РёСЏ в†’ РїСЂРѕРІРµСЂРєР°
+        StartCoroutine(ProcessCascade(matches));
     }
 
-    private void SwapCells(Points firstPoint, Points secondPoint)
+    private IEnumerator ProcessCascade(List<Cell> matches)
     {
-        var firstCell = GetCellAt(firstPoint);
-        var secondCell = GetCellAt(secondPoint);
+        _isProcessing = true;
 
-        _board[firstPoint.x, firstPoint.y] = secondCell;
-        _board[secondPoint.x, secondPoint.y] = firstCell;
+        while (matches.Count > 0)
+        {
+            // 1. РЈРґР°Р»СЏРµРј СЃРѕРІРїР°РІС€РёРµ СЏС‡РµР№РєРё СЃ Р°РЅРёРјР°С†РёРµР№
+            yield return StartCoroutine(DestroyMatchedCellsSmooth(matches));
 
-        firstCell.SetPoint(secondPoint);
-        secondCell.SetPoint(firstPoint);
+            // 2. РџР°РґРµРЅРёРµ СЏС‡РµРµРє РІРЅРёР·
+            yield return StartCoroutine(DropCells());
+
+            // 3. Р“РµРЅРµСЂР°С†РёСЏ РЅРѕРІС‹С… СЏС‡РµРµРє СЃРІРµСЂС…Сѓ
+            yield return StartCoroutine(SpawnNewCells());
+
+            // 4. Р–РґС‘Рј РїРѕРєР° РІСЃРµ Р°РЅРёРјР°С†РёРё Р·Р°РєРѕРЅС‡Р°С‚СЃСЏ
+            yield return StartCoroutine(WaitForUpdatingCells());
+
+            // 5. РџСЂРѕРІРµСЂСЏРµРј РєР°СЃРєР°РґРЅС‹Рµ РјР°С‚С‡Рё
+            matches = FindAllMatches();
+        }
+
+        _isProcessing = false;
     }
 
-    private IEnumerator DestroyMatchedCellsSmooth(List<Cell> matches) // Плавное удаление с небольшой задержкой между ячейками
+    private IEnumerator DestroyMatchedCellsSmooth(List<Cell> matches)
     {
-        yield return new WaitForSeconds(0.2f); // Ждём начало анимации свапа
+        yield return new WaitForSeconds(0.2f);
 
+        // Р—Р°РїСѓСЃРєР°РµРј Р°РЅРёРјР°С†РёСЋ СѓРјРµРЅСЊС€РµРЅРёСЏ РґР»СЏ РІСЃРµС… СЏС‡РµРµРє РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕ
+        var coroutines = new List<Coroutine>();
         foreach (var cell in matches)
         {
             int x = cell.Point.x;
@@ -124,15 +146,16 @@ public class BoardService : MonoBehaviour
             _updatingCells.Remove(cell);
             _board[x, y] = null;
 
-            // Плавное уменьшение перед удалением
             if (cell != null && cell.gameObject != null)
-            {
-                StartCoroutine(ShrinkAndDestroy(cell));
-            }
+                coroutines.Add(StartCoroutine(ShrinkAndDestroy(cell)));
         }
+
+        // Р–РґС‘Рј РїРѕРєР° РІСЃРµ СѓРјРµРЅСЊС€Р°С‚СЃСЏ
+        foreach (var c in coroutines)
+            yield return c;
     }
 
-    private IEnumerator ShrinkAndDestroy(Cell cell) // Уменьшает ячейку и удаляет
+    private IEnumerator ShrinkAndDestroy(Cell cell)
     {
         var t = cell.transform;
         var startScale = t.localScale;
@@ -152,6 +175,96 @@ public class BoardService : MonoBehaviour
             Destroy(cell.gameObject);
     }
 
+    private IEnumerator DropCells()
+    {
+        bool hasMoved = true;
+
+        // РџРѕРІС‚РѕСЂСЏРµРј РїРѕРєР° РµСЃС‚СЊ С‡С‚Рѕ РґРІРёРіР°С‚СЊ (СЏС‡РµР№РєР° РјРѕР¶РµС‚ СѓРїР°СЃС‚СЊ РЅР° РЅРµСЃРєРѕР»СЊРєРѕ РїРѕР·РёС†РёР№)
+        while (hasMoved)
+        {
+            hasMoved = false;
+
+            // РџСЂРѕС…РѕРґРёРј СЃРЅРёР·Сѓ РІРІРµСЂС… РїРѕ РєР°Р¶РґРѕРјСѓ СЃС‚РѕР»Р±С†Сѓ
+            for (int x = 0; x < Config.BoardWith; x++)
+            {
+                for (int y = Config.BoardHeight - 1; y >= 1; y--)
+                {
+                    if (_board[x, y] != null)
+                        continue;
+
+                    // РџСѓСЃС‚Р°СЏ СЏС‡РµР№РєР° вЂ” РёС‰РµРј Р±Р»РёР¶Р°Р№С€СѓСЋ РЅРµРїСѓСЃС‚СѓСЋ СЃРІРµСЂС…Сѓ
+                    for (int above = y - 1; above >= 0; above--)
+                    {
+                        if (_board[x, above] != null)
+                        {
+                            // Р”РІРёРіР°РµРј СЏС‡РµР№РєСѓ РІРЅРёР·
+                            var cell = _board[x, above];
+                            _board[x, y] = cell;
+                            _board[x, above] = null;
+
+                            cell.SetPoint(new Points(x, y));
+                            ResetCell(cell);
+
+                            hasMoved = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (hasMoved)
+                yield return new WaitForSeconds(0.05f); // РњР°Р»РµРЅСЊРєР°СЏ РїР°СѓР·Р° РјРµР¶РґСѓ С€Р°РіР°РјРё РїР°РґРµРЅРёСЏ
+        }
+
+        // Р–РґС‘Рј РїРѕРєР° РІСЃРµ СЏС‡РµР№РєРё РґРѕРµРґСѓС‚
+        yield return StartCoroutine(WaitForUpdatingCells());
+    }
+
+    private IEnumerator SpawnNewCells()
+    {
+        // РџСЂРѕС…РѕРґРёРј РїРѕ СЃС‚РѕР»Р±С†Р°Рј СЃРІРµСЂС…Сѓ РІРЅРёР·, Р·Р°РїРѕР»РЅСЏРµРј РїСѓСЃС‚РѕС‚С‹
+        for (int x = 0; x < Config.BoardWith; x++)
+        {
+            for (int y = 0; y < Config.BoardHeight; y++)
+            {
+                if (_board[x, y] == null)
+                {
+                    CreateCellAt(x, y, _cellMover);
+
+                    var cell = _board[x, y];
+
+                    // РЎС‚Р°СЂС‚РѕРІР°СЏ РїРѕР·РёС†РёСЏ вЂ” РІС‹С€Рµ РґРѕСЃРєРё, С‡С‚РѕР±С‹ СЏС‡РµР№РєР° "СѓРїР°Р»Р°" СЃРІРµСЂС…Сѓ
+                    var spawnPoint = new Points(x, -1);
+                    cell.rect.anchoredPosition = GetBoardPositionFromPoint(spawnPoint);
+                    cell.transform.localScale = Vector3.one;
+
+                    ResetCell(cell); // Р—Р°РїСѓСЃРєР°РµРј Р°РЅРёРјР°С†РёСЋ РґРІРёР¶РµРЅРёСЏ Рє С†РµР»РµРІРѕР№ РїРѕР·РёС†РёРё
+                }
+            }
+        }
+
+        // Р–РґС‘Рј РїРѕРєР° РІСЃРµ РЅРѕРІС‹Рµ СЏС‡РµР№РєРё РґРѕРµРґСѓС‚
+        yield return StartCoroutine(WaitForUpdatingCells());
+    }
+
+    private IEnumerator WaitForUpdatingCells()
+    {
+        while (_updatingCells.Count > 0)
+            yield return null;
+    }
+
+    private void SwapCells(Points firstPoint, Points secondPoint)
+    {
+        var firstCell = GetCellAt(firstPoint);
+        var secondCell = GetCellAt(secondPoint);
+
+        _board[firstPoint.x, firstPoint.y] = secondCell;
+        _board[secondPoint.x, secondPoint.y] = firstCell;
+
+        firstCell.SetPoint(secondPoint);
+        secondCell.SetPoint(firstPoint);
+    }
+
     public void ResetCell(Cell cell)
     {
         cell.ResetPosition();
@@ -159,7 +272,7 @@ public class BoardService : MonoBehaviour
             _updatingCells.Add(cell);
     }
 
-    // ===== ИНИЦИАЛИЗАЦИЯ =====
+    // ===== РРќРР¦РРђР›РР—РђР¦РРЇ =====
 
     private void InitializeBoard()
     {
@@ -211,7 +324,7 @@ public class BoardService : MonoBehaviour
 
     public Cell GetCellAt(Points point) => GetCellAt(point.x, point.y);
 
-    // ===== СИСТЕМА МАТЧЕЙ =====
+    // ===== РЎРРЎРўР•РњРђ РњРђРўР§Р•Р™ =====
 
     public List<Cell> FindAllMatches()
     {
