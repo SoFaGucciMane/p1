@@ -15,7 +15,7 @@ public class BoardService : MonoBehaviour
     private CellMover _cellMover;
 
     private readonly List<Cell> _updatingCells = new List<Cell>(); // —писок €чеек, которых мы должны обновл€ть
-    private readonly List<CellFlip> _flippedCells = new List<CellFlip>(); // —писок €чеек, которых мы должны обновл€ть
+    private readonly List<CellFlip> _flippedCells = new List<CellFlip>(); // —писок пар €чеек, которые сейчас в процессе обмена
 
 
     private void Awake()
@@ -26,48 +26,113 @@ public class BoardService : MonoBehaviour
     private void Start()
     {
         InitializeBoard();
-        
     }
-        private void Update()
-        {
-            _cellMover.Update();// «апускаем update в скрипте, потому что у него есть 
 
-            var finishedUpdating = new List<Cell>();
-            foreach (var cell in _updatingCells) // ѕеребиаем из существующих €чеек обновленные €чейки
-            {
-                if(!cell.UpdateCell())
+    private void Update()
+    {
+        _cellMover.Update();
+
+        var finishedUpdating = new List<Cell>();
+        foreach (var cell in _updatingCells)
+        {
+            if (!cell.UpdateCell())
                 finishedUpdating.Add(cell);
-            }
-            foreach (var cell in finishedUpdating) 
-            {
-                var flip = GetFlip(cell); // ѕолучаем флип от той €чейки, по который мы проходимс€ / —¬я«№ ƒ¬”’ я„≈≈ 
-                _flippedCells.Remove(flip); // ”дал€ем их из активынх €чееек
-                _updatingCells.Remove(cell);
-            }
         }
 
-    private CellFlip GetFlip(Cell cell) // »щет где участвует данна€ пара €чеек. Ќаходит всю пару целиком.
-    {
-        foreach (var flip in _flippedCells) 
+        foreach (var cell in finishedUpdating)
         {
-            if(flip.GetOtherCell(cell) != null)
-                return flip;
-            return null;
+            var flip = GetFlip(cell);
+            if (flip != null)
+                _flippedCells.Remove(flip);
+            _updatingCells.Remove(cell);
         }
     }
 
-    public void FlipCells(Points firstPoint, Points secondPoint, bool main) // ћетод, который будет запускать процесс смену €чеек
+    private CellFlip GetFlip(Cell cell)
     {
-        if (GetCellAt(firstPoint) >= 0)
-            return;
-        return;
+        foreach (var flip in _flippedCells)
+        {
+            if (flip.GetOtherCell(cell) != null)
+                return flip;
+        }
+        return null;
     }
 
-    public void ResetCell(Cell cell) // –ессетит позицию €чейки
+    public int GetCellTypeAtPoint(Points point)
     {
-        cell.ResetPosition(); // ћетод, который обновл€ет позициию
-        _updatingCells.Add(cell); // ƒобавление в список €чеек, которых нужно обновить
+        var cell = GetCellAt(point.x, point.y);
+        if (cell == null)
+            return -1;
+        return (int)cell.CellType;
     }
+
+    public void FlipCells(Points firstPoint, Points secondPoint, bool main)
+    {
+        if (GetCellTypeAtPoint(firstPoint) < 0)
+            return;
+        if (GetCellTypeAtPoint(secondPoint) < 0)
+            return;
+
+        // ѕредварительный свап Ч провер€ем, будет ли матч
+        SwapCells(firstPoint, secondPoint);
+
+        var matches = FindAllMatches();
+
+        if (matches.Count == 0)
+        {
+            // ћатча нет Ч откатываем свап, €чейка просто вернЄтс€ на место
+            SwapCells(firstPoint, secondPoint);
+            var cell = GetCellAt(firstPoint);
+            ResetCell(cell);
+            return;
+        }
+
+        // ћатч есть Ч запускаем анимацию движени€
+        var firstCell = GetCellAt(firstPoint);
+        var secondCell = GetCellAt(secondPoint);
+
+        _flippedCells.Add(new CellFlip(firstCell, secondCell));
+
+        ResetCell(firstCell);
+        ResetCell(secondCell);
+
+        // ”дал€ем совпавшие €чейки сразу
+        DestroyMatchedCells(matches);
+    }
+
+    private void SwapCells(Points firstPoint, Points secondPoint)
+    {
+        var firstCell = GetCellAt(firstPoint);
+        var secondCell = GetCellAt(secondPoint);
+
+        _board[firstPoint.x, firstPoint.y] = secondCell;
+        _board[secondPoint.x, secondPoint.y] = firstCell;
+
+        firstCell.SetPoint(secondPoint);
+        secondCell.SetPoint(firstPoint);
+    }
+
+    private void DestroyMatchedCells(List<Cell> matches) // ”дал€ет совпавшие €чейки Ч без заполнени€ пустот
+    {
+        foreach (var cell in matches)
+        {
+            int x = cell.Point.x;
+            int y = cell.Point.y;
+            _updatingCells.Remove(cell);
+            _board[x, y] = null;
+            Destroy(cell.gameObject);
+        }
+    }
+
+    public void ResetCell(Cell cell)
+    {
+        cell.ResetPosition();
+        if (!_updatingCells.Contains(cell))
+            _updatingCells.Add(cell);
+    }
+
+    // ===== »Ќ»÷»јЋ»«ј÷»я =====
+
     private void InitializeBoard()
     {
         _board = new Cell[Config.BoardWith, Config.BoardHeight];
@@ -228,6 +293,4 @@ public class BoardService : MonoBehaviour
             }
         }
     }
-
-
 }
