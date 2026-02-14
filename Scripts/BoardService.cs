@@ -139,6 +139,10 @@ public class BoardService : MonoBehaviour
         }
 
         _isProcessing = false;
+
+        // Каскад завершён — проверяем победу/проигрыш
+        if (_levelManager != null)
+            _levelManager.CheckWinLose();
     }
 
     private IEnumerator DestroyMatchedCellsSmooth(List<Cell> matches)
