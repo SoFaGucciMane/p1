@@ -1,17 +1,21 @@
-using UnityEngine;
+п»їusing UnityEngine;
 using TMPro;
 
 public class LevelManager : MonoBehaviour
 {
-    [Header("UI Тексты")]
+    [Header("UI РўРµРєСЃС‚С‹")]
     [SerializeField] private TMP_Text _levelText;
     [SerializeField] private TMP_Text _scoreText;
     [SerializeField] private TMP_Text _movesText;
     [SerializeField] private TMP_Text _goalText;
 
-    [Header("Панели")]
+    [Header("РџР°РЅРµР»Рё")]
     [SerializeField] private GameObject _winPanel;
     [SerializeField] private GameObject _losePanel;
+    [SerializeField] private GameObject _menuPanel;
+
+    [Header("РРіСЂР°")]
+    [SerializeField] private BoardService _boardService;
 
     private LevelData _currentLevel;
     private int _score;
@@ -28,6 +32,35 @@ public class LevelManager : MonoBehaviour
     {
         _savedLevel = PlayerPrefs.GetInt("CurrentLevel", 1);
         _totalScore = PlayerPrefs.GetInt("TotalScore", 0);
+
+        ShowMenu();
+    }
+
+    private void ShowMenu()
+    {
+        if (_menuPanel != null) _menuPanel.SetActive(true);
+        if (_winPanel != null) _winPanel.SetActive(false);
+        if (_losePanel != null) _losePanel.SetActive(false);
+
+        // РЎРєСЂС‹РІР°РµРј РёРіСЂРѕРІС‹Рµ С‚РµРєСЃС‚С‹ РІ РјРµРЅСЋ
+        SetGameUIVisible(false);
+    }
+
+    private void SetGameUIVisible(bool visible)
+    {
+        if (_scoreText != null) _scoreText.gameObject.SetActive(visible);
+        if (_movesText != null) _movesText.gameObject.SetActive(visible);
+        if (_goalText != null) _goalText.gameObject.SetActive(visible);
+        // _levelText РЅРµ СЃРєСЂС‹РІР°РµРј вЂ” РѕРЅ РјРѕР¶РµС‚ Р±С‹С‚СЊ РЅСѓР¶РµРЅ Рё РІ РјРµРЅСЋ
+    }
+
+    public void OnClickPlay()
+    {
+        if (_menuPanel != null) _menuPanel.SetActive(false);
+
+        // РџРѕРєР°Р·С‹РІР°РµРј РёРіСЂРѕРІС‹Рµ С‚РµРєСЃС‚С‹
+        SetGameUIVisible(true);
+
         StartLevel(_savedLevel);
     }
 
@@ -43,6 +76,9 @@ public class LevelManager : MonoBehaviour
         if (_winPanel != null) _winPanel.SetActive(false);
         if (_losePanel != null) _losePanel.SetActive(false);
 
+        if (_boardService != null)
+            _boardService.ResetBoard();
+
         if (AchievementManager.Instance != null)
         {
             AchievementManager.Instance.OnGameStarted();
@@ -53,9 +89,11 @@ public class LevelManager : MonoBehaviour
         PlayerPrefs.Save();
 
         UpdateUI();
+
+        Debug.Log($"РЎС‚Р°СЂС‚ СѓСЂРѕРІРЅСЏ {level}. Р¦РµР»СЊ: {_currentLevel.TargetScore} РѕС‡РєРѕРІ. РҐРѕРґС‹: {_movesLeft}");
     }
 
-    public void UseMove() // Просто отнимает ход, без проверок
+    public void UseMove()
     {
         if (IsLevelOver)
             return;
@@ -64,7 +102,7 @@ public class LevelManager : MonoBehaviour
         UpdateUI();
     }
 
-    public void AddMatchedCells(int count) // Добавляет очки, без проверки победы
+    public void AddMatchedCells(int count)
     {
         if (IsLevelOver)
             return;
@@ -79,49 +117,57 @@ public class LevelManager : MonoBehaviour
         UpdateUI();
     }
 
-    public void CheckWinLose() // Вызывается ПОСЛЕ завершения каскада
+    public void CheckWinLose()
     {
         if (IsLevelOver)
             return;
 
         if (_score >= _currentLevel.TargetScore)
         {
-            // Победа
             _levelComplete = true;
 
+            _savedLevel = _currentLevel.Level + 1;
+            PlayerPrefs.SetInt("CurrentLevel", _savedLevel);
             PlayerPrefs.SetInt("TotalScore", _totalScore);
             PlayerPrefs.Save();
 
             if (_winPanel != null)
                 _winPanel.SetActive(true);
 
-            Debug.Log($"Победа! Уровень {_currentLevel.Level} пройден! Очки: {_score}");
+            Debug.Log($"РџРѕР±РµРґР°! РЈСЂРѕРІРµРЅСЊ {_currentLevel.Level} РїСЂРѕР№РґРµРЅ! РћС‡РєРё: {_score}/{_currentLevel.TargetScore}");
         }
         else if (_movesLeft <= 0)
         {
-            // Проигрыш — ходы кончились и очков не хватает
             _levelFailed = true;
 
             if (_losePanel != null)
                 _losePanel.SetActive(true);
 
-            Debug.Log($"Проигрыш! Очки: {_score}/{_currentLevel.TargetScore}");
+            Debug.Log($"РџСЂРѕРёРіСЂС‹С€! РћС‡РєРё: {_score}/{_currentLevel.TargetScore}");
         }
 
         UpdateUI();
     }
 
-    // === Кнопки UI ===
+    // === РљРЅРѕРїРєРё UI ===
 
     public void OnClickNextLevel()
     {
-        int nextLevel = _currentLevel.Level + 1;
-        StartLevel(nextLevel);
+        ShowMenu();
     }
 
     public void OnClickRestart()
     {
-        StartLevel(_currentLevel.Level);
+        ShowMenu();
+    }
+
+    public void ResetAllProgress() // Р”Р»СЏ С‚РµСЃС‚Р° вЂ” СЃР±СЂРѕСЃ РїСЂРѕРіСЂРµСЃСЃР°
+    {
+        PlayerPrefs.DeleteAll();
+        _savedLevel = 1;
+        _totalScore = 0;
+        ShowMenu();
+        Debug.Log("РџСЂРѕРіСЂРµСЃСЃ СЃР±СЂРѕС€РµРЅ!");
     }
 
     private void UpdateUI()

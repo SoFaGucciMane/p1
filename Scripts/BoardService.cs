@@ -32,6 +32,34 @@ public class BoardService : MonoBehaviour
         InitializeBoard();
     }
 
+    public void ResetBoard() // Пересоздание доски для нового уровня
+    {
+        // Останавливаем все корутины (каскады)
+        StopAllCoroutines();
+        _isProcessing = false;
+        _updatingCells.Clear();
+        _flippedCells.Clear();
+
+        // Удаляем все старые ячейки
+        if (_board != null)
+        {
+            for (int x = 0; x < Config.BoardWith; x++)
+            {
+                for (int y = 0; y < Config.BoardHeight; y++)
+                {
+                    if (_board[x, y] != null)
+                    {
+                        Destroy(_board[x, y].gameObject);
+                        _board[x, y] = null;
+                    }
+                }
+            }
+        }
+
+        // Создаём новую доску
+        InitializeBoard();
+    }
+
     private void Update()
     {
         _cellMover.Update();
