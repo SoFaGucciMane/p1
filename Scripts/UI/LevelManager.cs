@@ -126,6 +126,10 @@ public class LevelManager : MonoBehaviour
         {
             _levelComplete = true;
 
+            // Начисляем монеты за прохождение уровня
+            if (CurrencyManager.Instance != null)
+                CurrencyManager.Instance.AddCoins(_currentLevel.Level * 100);
+
             _savedLevel = _currentLevel.Level + 1;
             PlayerPrefs.SetInt("CurrentLevel", _savedLevel);
             PlayerPrefs.SetInt("TotalScore", _totalScore);

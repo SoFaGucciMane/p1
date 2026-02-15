@@ -1,8 +1,11 @@
 using UnityEngine;
+using TMPro;
 
 public class CurrencyManager : MonoBehaviour
 {
     public static CurrencyManager Instance { get; private set; }
+
+    [SerializeField] private TMP_Text _coinsText; // Текст монет в UI (Gold)
 
     private int _coins;
     private const string COINS_KEY = "PlayerCoins";
@@ -22,20 +25,27 @@ public class CurrencyManager : MonoBehaviour
         _coins = PlayerPrefs.GetInt(COINS_KEY, 0);
     }
 
+    private void Start()
+    {
+        UpdateUI();
+    }
+
     public void AddCoins(int amount)
     {
         _coins += amount;
         Save();
+        UpdateUI();
         Debug.Log($"Получено {amount} монет. Всего: {_coins}");
     }
 
-    public bool SpendCoins(int amount) // Возвращает true если хватило
+    public bool SpendCoins(int amount)
     {
         if (_coins < amount)
             return false;
 
         _coins -= amount;
         Save();
+        UpdateUI();
         return true;
     }
 
@@ -48,5 +58,11 @@ public class CurrencyManager : MonoBehaviour
     {
         PlayerPrefs.SetInt(COINS_KEY, _coins);
         PlayerPrefs.Save();
+    }
+
+    private void UpdateUI()
+    {
+        if (_coinsText != null)
+            _coinsText.text = $"{_coins}";
     }
 }
