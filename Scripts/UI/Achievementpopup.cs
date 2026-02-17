@@ -27,7 +27,7 @@ public class AchievementPopup : MonoBehaviour
 
     private IEnumerator ShowRoutine(string achievementName)
     {
-        _text.text = $"* {achievementName}!"; // Без эмодзи
+        _text.text = $"{achievementName}!";
 
         yield return StartCoroutine(Fade(0f, 1f));
         yield return new WaitForSeconds(_showDuration);

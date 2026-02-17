@@ -8,6 +8,7 @@ public class ShopItemUI : MonoBehaviour
     [SerializeField] private int _backgroundIndex;
     [SerializeField] private Button _button;
     [SerializeField] private TMP_Text _buttonText;
+    [SerializeField] private CanvasGroup _canvasGroup; // Для затемнения всего элемента
 
     private void OnEnable()
     {
@@ -24,13 +25,12 @@ public class ShopItemUI : MonoBehaviour
         else
             ShopManager.Instance.BuyBackground(_backgroundIndex);
 
-        // Обновляем все элементы магазина с задержкой в 1 кадр
         StartCoroutine(RefreshAllItems());
     }
 
     private IEnumerator RefreshAllItems()
     {
-        yield return null; // Ждём 1 кадр чтобы PlayerPrefs обновились
+        yield return null;
 
         var allItems = FindObjectsByType<ShopItemUI>(FindObjectsSortMode.None);
         foreach (var item in allItems)
@@ -39,31 +39,43 @@ public class ShopItemUI : MonoBehaviour
 
     public void UpdateState()
     {
-        if (ShopManager.Instance == null)
+        if (ShopManager.Instance == null || _buttonText == null || _button == null)
             return;
 
         bool owned = ShopManager.Instance.IsOwned(_backgroundIndex);
         bool isActive = ShopManager.Instance.ActiveBackground == _backgroundIndex;
         int price = ShopManager.Instance.GetPrice(_backgroundIndex);
+        bool canAfford = CurrencyManager.Instance != null && CurrencyManager.Instance.HasEnough(price);
 
-        if (_buttonText != null && _button != null)
+        if (isActive)
         {
-            if (isActive)
-            {
-                _buttonText.text = "OK";
-                _button.interactable = false;
-            }
-            else if (owned)
-            {
-                _buttonText.text = ">>";
-                _button.interactable = true;
-            }
-            else
-            {
-                _buttonText.text = $"{price}";
-                _button.interactable = CurrencyManager.Instance != null
-                    && CurrencyManager.Instance.HasEnough(price);
-            }
+            _buttonText.text = "Активный";
+            _button.interactable = false;
+            SetDim(false); // Яркий
         }
+        else if (owned)
+        {
+            _buttonText.text = "Применить";
+            _button.interactable = true;
+            SetDim(false); // Яркий
+        }
+        else if (canAfford)
+        {
+            _buttonText.text = $"{price}";
+            _button.interactable = true;
+            SetDim(false); // Яркий
+        }
+        else
+        {
+            _buttonText.text = $"{price}";
+            _button.interactable = false;
+            SetDim(true); // Притемнённый
+        }
+    }
+
+    private void SetDim(bool dim)
+    {
+        if (_canvasGroup != null)
+            _canvasGroup.alpha = dim ? 0.4f : 1f;
     }
 }
