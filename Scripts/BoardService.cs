@@ -131,6 +131,10 @@ public class BoardService : MonoBehaviour
         if (_levelManager != null)
             _levelManager.UseMove();
 
+        // Звук перемещения
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayCellMove();
+
         // Запускаем анимацию движения
         var firstCell = GetCellAt(firstPoint);
         var secondCell = GetCellAt(secondPoint);
@@ -180,6 +184,10 @@ public class BoardService : MonoBehaviour
         // Сообщаем LevelManager о удалённых ячейках
         if (_levelManager != null)
             _levelManager.AddMatchedCells(matches.Count);
+
+        // Звук ломания блоков
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayBlockBreak();
 
         // Запускаем анимацию уменьшения для всех ячеек одновременно
         var coroutines = new List<Coroutine>();

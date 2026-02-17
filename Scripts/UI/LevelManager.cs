@@ -60,9 +60,12 @@ public class LevelManager : MonoBehaviour
 
     public void OnClickPlay()
     {
+        // Звук клика
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayMenuClick();
+
         if (_menuPanel != null) _menuPanel.SetActive(false);
 
-        // Показываем игровые тексты
         SetGameUIVisible(true);
 
         StartLevel(_savedLevel);
@@ -142,6 +145,10 @@ public class LevelManager : MonoBehaviour
             if (_winPanel != null)
                 _winPanel.SetActive(true);
 
+            // Звук победы
+            if (SoundManager.Instance != null)
+                SoundManager.Instance.PlayLevelComplete();
+
             Debug.Log($"Победа! Уровень {_currentLevel.Level} пройден! Очки: {_score}/{_currentLevel.TargetScore}");
         }
         else if (_movesLeft <= 0)
@@ -161,11 +168,15 @@ public class LevelManager : MonoBehaviour
 
     public void OnClickNextLevel()
     {
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayMenuClick();
         ShowMenu();
     }
 
     public void OnClickRestart()
     {
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayMenuClick();
         ShowMenu();
     }
 

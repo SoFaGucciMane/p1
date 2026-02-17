@@ -13,12 +13,16 @@ public class CollectionUI : MonoBehaviour
 
     public void Open()
     {
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayMenuClick();
         _collectionPanel.SetActive(true);
         RefreshList();
     }
 
     public void Close()
     {
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayMenuClick();
         _collectionPanel.SetActive(false);
     }
 

@@ -20,6 +20,9 @@ public class ShopItemUI : MonoBehaviour
         if (ShopManager.Instance == null)
             return;
 
+        if (SoundManager.Instance != null)
+            SoundManager.Instance.PlayMenuClick();
+
         if (ShopManager.Instance.IsOwned(_backgroundIndex))
             ShopManager.Instance.ApplyBackground(_backgroundIndex);
         else
