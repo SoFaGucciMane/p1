@@ -1,4 +1,4 @@
-using System.Collections;
+п»їusing System.Collections;
 using UnityEngine;
 using TMPro;
 
@@ -27,7 +27,7 @@ public class AchievementPopup : MonoBehaviour
 
     private IEnumerator ShowRoutine(string achievementName)
     {
-        _text.text = $"Достижение: {achievementName}!"; // Без эмодзи
+        _text.text = $"* {achievementName}!"; // Р‘РµР· СЌРјРѕРґР·Рё
 
         yield return StartCoroutine(Fade(0f, 1f));
         yield return new WaitForSeconds(_showDuration);

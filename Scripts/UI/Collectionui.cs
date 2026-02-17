@@ -46,7 +46,7 @@ public class CollectionUI : MonoBehaviour
 
             // Заполняем текст
             var texts = item.GetComponentsInChildren<TMP_Text>();
-            string status = ach.Unlocked ? "[V]" : "[X]";
+            string status = ach.Unlocked ? "+" : "-";
 
             if (texts.Length >= 2)
             {

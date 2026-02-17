@@ -44,6 +44,10 @@ public class LevelManager : MonoBehaviour
 
         // Скрываем игровые тексты в меню
         SetGameUIVisible(false);
+
+        // LVL всегда показываем
+        if (_levelText != null)
+            _levelText.text = $"LVL {_savedLevel}";
     }
 
     private void SetGameUIVisible(bool visible)
@@ -177,12 +181,12 @@ public class LevelManager : MonoBehaviour
     private void UpdateUI()
     {
         if (_levelText != null)
-            _levelText.text = $"Level: {_currentLevel.Level}";
+            _levelText.text = $"LVL {_currentLevel.Level}";
         if (_scoreText != null)
-            _scoreText.text = $"Score: {_score}/{_currentLevel.TargetScore}";
+            _scoreText.text = $"{_score}/{_currentLevel.TargetScore}";
         if (_movesText != null)
-            _movesText.text = $"Moves: {_movesLeft}/{_currentLevel.MaxMoves}";
+            _movesText.text = $"{_movesLeft}/{_currentLevel.MaxMoves}";
         if (_goalText != null)
-            _goalText.text = $"Total: {_totalScore}";
+            _goalText.text = $"{_totalScore}";
     }
 }

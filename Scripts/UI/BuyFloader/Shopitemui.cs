@@ -1,4 +1,4 @@
-using System.Collections;
+п»їusing System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -24,15 +24,15 @@ public class ShopItemUI : MonoBehaviour
         else
             ShopManager.Instance.BuyBackground(_backgroundIndex);
 
-        // Обновляем все элементы магазина с задержкой в 1 кадр
+        // РћР±РЅРѕРІР»СЏРµРј РІСЃРµ СЌР»РµРјРµРЅС‚С‹ РјР°РіР°Р·РёРЅР° СЃ Р·Р°РґРµСЂР¶РєРѕР№ РІ 1 РєР°РґСЂ
         StartCoroutine(RefreshAllItems());
     }
 
     private IEnumerator RefreshAllItems()
     {
-        yield return null; // Ждём 1 кадр чтобы PlayerPrefs обновились
+        yield return null; // Р–РґС‘Рј 1 РєР°РґСЂ С‡С‚РѕР±С‹ PlayerPrefs РѕР±РЅРѕРІРёР»РёСЃСЊ
 
-        var allItems = FindObjectsOfType<ShopItemUI>();
+        var allItems = FindObjectsByType<ShopItemUI>(FindObjectsSortMode.None);
         foreach (var item in allItems)
             item.UpdateState();
     }
@@ -50,17 +50,17 @@ public class ShopItemUI : MonoBehaviour
         {
             if (isActive)
             {
-                _buttonText.text = "Активен";
+                _buttonText.text = "OK";
                 _button.interactable = false;
             }
             else if (owned)
             {
-                _buttonText.text = "Применить";
+                _buttonText.text = ">>";
                 _button.interactable = true;
             }
             else
             {
-                _buttonText.text = $"{price}\nКупить";
+                _buttonText.text = $"{price}";
                 _button.interactable = CurrencyManager.Instance != null
                     && CurrencyManager.Instance.HasEnough(price);
             }
