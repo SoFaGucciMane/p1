@@ -17,7 +17,7 @@ public class Points
 
 
     }
-    public void Myltiply(int value) // Нужен для иницилизации координатов в сетку с блоками.
+    public void Myltiply(int value) 
     {
         x *= value;
         y *= value;
@@ -29,7 +29,7 @@ public class Points
         y += point.y;
     }
 
-    public bool Equals(Points point) // Поверка совпадения координат и точек.    
+    public bool Equals(Points point)  
     {
         return x == point.x && y == point.y; 
     }
@@ -44,10 +44,10 @@ public class Points
     public static Points FromVector(Vector3 vector)
     => new((int)vector.X, (int)vector.Y);
 
-    public static Points Myltiply(Points point, int value) // Умножение поинтов
+    public static Points Myltiply(Points point, int value) 
     => new(point.x * value, point.y * value);
 
-    public static Points Add(Points point1, Points point2) // Сложение поинтов
+    public static Points Add(Points point1, Points point2) 
     => new(point1.x + point2.x, point1.y + point2.y);
 
     public static Points Clone(Points point)
