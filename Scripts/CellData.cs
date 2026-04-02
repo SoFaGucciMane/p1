@@ -7,7 +7,7 @@ using System.Xml.Serialization;
 
 public class CellData
     {
-    public enum CellType // Перечесление ячеек.
+    public enum CellType 
     {
         Blank = 0,
         Blue = 1,
@@ -17,8 +17,8 @@ public class CellData
         Yellow = 5,
     }
 
-    public CellType cellType; // Хранит тип данной ячейки
-    public Points point; // Хранит позицию
+    public CellType cellType; 
+    public Points point; 
 
     private Cell _cell;
     public CellData(CellType cellType, Points point) 
