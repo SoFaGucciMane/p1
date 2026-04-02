@@ -6,23 +6,23 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 
 
-public class BoardService : MonoBehaviour // В BoardService мы будет регистрировать наши элементы по сетке.
+public class BoardService : MonoBehaviour 
 {
     [SerializeField] RectTransform _boardRect;
     [SerializeField] Cell _cellPrefab;
-    [SerializeField] private Sprite[] _cellSprites; // Массив спрайтов для ячеек
+    [SerializeField] private Sprite[] _cellSprites; 
 
-    private MatchMachine _matchMachine; // Сылка
+    private MatchMachine _matchMachine; 
 
     private void Awake()
     {
-        _matchMachine = new MatchMachine(this);// Инициализируем из BoardServise 
+        _matchMachine = new MatchMachine(this);
     }
     private void Start()
     {
         VerifyBoardOnMatches();
 
-        for (int x = 0; x < Config.BoardWith; x++)  // Заполнение самих ячеек.
+        for (int x = 0; x < Config.BoardWith; x++)  
         {
             for (int y = 0; y < Config.BoardHeight; y++)
             {
@@ -37,20 +37,16 @@ public class BoardService : MonoBehaviour // В BoardService мы будет регистриров
 
     private void VerifyBoardOnMatches()
     {
-        for (int x = 0; x < Config.BoardWith; x++)  // Заполнение самих ячеек.
+        for (int x = 0; x < Config.BoardWith; x++)  
         {
             for (int y = 0; y < Config.BoardHeight; y++)
             {
-                //var point = new Points(x, y);
-                //var cellTypeAtPoint = GetCellTypeAtPoint(point);// Будет возврощать тип ячейки в заданной точке 
+                
             }
         }
     }
 
-    //private object GetCellTypeAtPoint(Points point) 
-    //{
-    //    _b
-    //}
+
 
     private CellData.CellType GetRandomCellType()
       =>(CellData.CellType)( Random.Range(0, _cellSprites.Length) + 1);
